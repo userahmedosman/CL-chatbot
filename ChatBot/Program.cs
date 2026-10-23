@@ -23,7 +23,7 @@ using Environment = System.Environment;
         Console.WriteLine("Welcome to the ChatBot! Type 'exit' to quit.");
         Console.WriteLine("You can ask me anything, and I'll do my best to respond.");
         Console.WriteLine();
-        MessageHandler Program = new MessageHandler();
+        MessageHandler chat = new MessageHandler();
         while (true)
         {
             Console.ForegroundColor = ConsoleColor.Green;
@@ -37,7 +37,7 @@ using Environment = System.Environment;
                 break;
             }
             
-            var response = await Program.SendMessage(userInput);
+            var response = await chat.SendMessage(userInput);
 
             Console.WriteLine(response);
             Console.WriteLine();
@@ -50,21 +50,56 @@ internal class MessageHandler
 {
 
     private readonly List<Content> _history = new();
+    private readonly Client _client;
+    const string ModelName = "gemini-3.5-flash";
+    public MessageHandler()
+    {
+
+        var geminiApiKey =
+        Environment.GetEnvironmentVariable("GEMINI_API_KEY");
+
+        if (string.IsNullOrWhiteSpace(geminiApiKey))
+        {
+            throw new InvalidOperationException(
+                "GEMINI_API_KEY is not configured.");
+        }
+
+        _client = new Client(apiKey: geminiApiKey);
+
+        _history.Add(new Content
+        {
+            Role = "user",
+            Parts =
+    [
+        Part.FromText("""
+        You are an assistant that makes very short and concise responses.
+        You must answer in a single sentence and avoid unnecessary details.
+        """)
+    ]
+        });
+
+        _history.Add(new Content
+        {
+            Role = "model",
+            Parts =
+            [
+                Part.FromText("Understood. I will keep all responses concise.")
+            ]
+        });
+    }
+     
     public async Task<string> SendMessage(string userMessage)
     {
-        var geminiApiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY");
-        var client = new Client(apiKey: geminiApiKey);
-        var info = "make a very short and consice responces";
 
         _history.Add(
             new Content
             {
                 Role = "user",
-                Parts = [Part.FromText("Instruction: " + info + "Question: " + userMessage)]
+                Parts = [Part.FromText(userMessage)]
             });
 
-        var response = await client.Models.GenerateContentAsync(
-            model: "gemini-3.5-flash",
+        var response = await _client.Models.GenerateContentAsync(
+            model: ModelName,
             contents: _history);
 
         _history.Add(
