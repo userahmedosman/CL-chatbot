@@ -13,12 +13,12 @@ using Environment = System.Environment;
         var gemini = "gemini-3.5-flash-lite";
 
         Console.ForegroundColor = ConsoleColor.Yellow;
-        Console.WriteLine("Available Model:");
+        Console.Write("[Available Model: ");
         Console.ResetColor();
 
 
-        Console.WriteLine(gemini);
-
+        Console.WriteLine(gemini + "]");
+        Console.WriteLine();
 
         Console.WriteLine("Welcome to the ChatBot! Type 'exit' to quit.");
         Console.WriteLine("You can ask me anything, and I'll do my best to respond.");
@@ -38,7 +38,9 @@ using Environment = System.Environment;
             }
             
             var response = await chat.SendMessage(userInput);
-
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.Write("Bot: ");
+            Console.ResetColor();
             Console.WriteLine(response);
             Console.WriteLine();
         }
