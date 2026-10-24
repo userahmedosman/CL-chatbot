@@ -2,6 +2,8 @@
 using Google.GenAI;
 using Google.GenAI.Types;
 using Microsoft.Extensions.AI;
+using System.Reflection.Metadata;
+using System.Text;
 using Environment = System.Environment;
 
  internal class Program
@@ -38,10 +40,16 @@ using Environment = System.Environment;
             }
             
             var response = await chat.SendMessage(userInput);
+
             Console.ForegroundColor = ConsoleColor.Cyan;
             Console.Write("Bot: ");
             Console.ResetColor();
-            Console.WriteLine(response);
+            foreach (char c in response)
+            {
+                Console.Write(c);
+                await Task.Delay(34);
+            }
+
             Console.WriteLine();
         }
     }
@@ -100,17 +108,29 @@ internal class MessageHandler
                 Parts = [Part.FromText(userMessage)]
             });
 
-        var response = await _client.Models.GenerateContentAsync(
-            model: ModelName,
-            contents: _history);
+        var sb = new StringBuilder();
+        var stream = _client.Models.GenerateContentStreamAsync(
+            model: ModelName, contents: _history);
+
+        await foreach (var part in stream)
+        {
+            foreach (var content in part?.Parts)
+            {
+                if (content?.Text != null)
+                {
+                    sb.Append(content.Text);
+                   
+                }
+            }
+        }
 
         _history.Add(
             new Content
             {
                 Role = "model",
-                Parts = [Part.FromText(response.Text)]
+                Parts = [Part.FromText(sb.ToString())]
             });
 
-        return response?.Text ?? "Sorry, I didn't understand that.";
+        return sb.ToString() ?? "Sorry, I didn't understand that.";
     }
 }
