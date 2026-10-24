@@ -101,36 +101,58 @@ internal class MessageHandler
     public async Task<string> SendMessage(string userMessage)
     {
 
-        _history.Add(
-            new Content
-            {
-                Role = "user",
-                Parts = [Part.FromText(userMessage)]
-            });
-
-        var sb = new StringBuilder();
-        var stream = _client.Models.GenerateContentStreamAsync(
-            model: ModelName, contents: _history);
-
-        await foreach (var part in stream)
+       try
         {
-            foreach (var content in part?.Parts)
+            _history.Add(
+           new Content
+           {
+               Role = "user",
+               Parts = [Part.FromText(userMessage)]
+           });
+
+            var sb = new StringBuilder();
+            var stream = _client.Models.GenerateContentStreamAsync(
+                model: ModelName, contents: _history);
+
+            await foreach (var part in stream)
             {
-                if (content?.Text != null)
+
+                foreach (var content in part?.Parts)
                 {
-                    sb.Append(content.Text);
-                   
+                    if (content?.Text != null)
+                    {
+                        sb.Append(content.Text);
+
+                    }
                 }
             }
+
+            _history.Add(
+                new Content
+                {
+                    Role = "model",
+                    Parts = [Part.FromText(sb.ToString())]
+                });
+
+            return sb.ToString() ?? "Sorry, I didn't understand that.";
+        }
+        catch (ClientError ex)
+        {
+            return HandleGeminiError(ex);
+        }
+    }
+
+    private static string HandleGeminiError(ClientError ex)
+    {
+        Console.ForegroundColor = ConsoleColor.Red;
+        Console.WriteLine("Apologies, we couldn't fulfill your request due to an error with the AI service.");
+        Console.ResetColor();
+        if (ex.Message.Contains("quota",
+            StringComparison.OrdinalIgnoreCase))
+        {
+            return "My AI quota has been exhausted. Please try again later.";
         }
 
-        _history.Add(
-            new Content
-            {
-                Role = "model",
-                Parts = [Part.FromText(sb.ToString())]
-            });
-
-        return sb.ToString() ?? "Sorry, I didn't understand that.";
+        return "An AI service error occurred.";
     }
 }
