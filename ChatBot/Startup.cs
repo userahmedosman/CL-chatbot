@@ -27,6 +27,7 @@ namespace ChatBot
                 .ConfigureOptions(option =>
                 {
                     option.MaxOutputTokens = 20;
+                    option.Temperature = 0.7f;
                 })
                 .Build(sp);
 
