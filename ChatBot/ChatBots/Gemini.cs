@@ -1,4 +1,5 @@
 ﻿using ChatBot;
+using ChatBot.Services;
 using Google.GenAI;
 using Google.GenAI.Types;
 using Microsoft.Extensions.AI;
@@ -10,7 +11,7 @@ internal class Gemini
     
     public static async Task Run(IChatClient _client)
     {
-
+        
         MessageHandler chat = new MessageHandler(_client);
         while (true)
         {

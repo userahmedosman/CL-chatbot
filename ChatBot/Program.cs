@@ -1,4 +1,5 @@
 ﻿using ChatBot;
+using ChatBot.Services;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -14,6 +15,10 @@ var defaultModel = provider switch
     "gemini" => "gemini-3.5-flash-lite",
     _ => throw new ArgumentException("Unsupported provider")
 };
+
+
+
+
 var model = args.Length > 1 ? args[1] : defaultModel;
 Console.ForegroundColor = ConsoleColor.Yellow;
 Console.WriteLine($"Using provider: {provider}, model: {model}");
