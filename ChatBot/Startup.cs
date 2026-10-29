@@ -16,7 +16,8 @@ namespace ChatBot
         {
             var geminiKey = Environment.GetEnvironmentVariable("GEMINI_KEY");
             builder.Services.AddTransient<IWeatherService, WeatherAPIService>();
-           
+            builder.Services.AddTransient<EvaluateWeatherConditions>();
+
             builder.Services.AddHttpClient();
             builder.Logging.AddFilter("System.Net.Http.HttpClient", LogLevel.None);
             builder.Services.AddChatClient(sp =>

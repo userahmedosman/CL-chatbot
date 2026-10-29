@@ -21,6 +21,16 @@ namespace ChatBot
                     Description = "Gets the current weather conditions for a specified city.",
                     
                 });
+
+            var evaluationService = sp.GetRequiredService<EvaluateWeatherConditions>();
+
+            yield return AIFunctionFactory.Create(
+                evaluationService.Evaluate,
+                new AIFunctionFactoryOptions
+                {
+                    Name = "evaluate_weather",
+                    Description = "Evaluates the weather conditions and provides recommendations based on the current weather.",
+                });
         }
     }
 }
