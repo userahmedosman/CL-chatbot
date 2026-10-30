@@ -31,6 +31,16 @@ namespace ChatBot
                     Name = "evaluate_weather",
                     Description = "Evaluates the weather conditions and provides recommendations based on the current weather.",
                 });
+
+            var emailGetService = sp.GetRequiredService<EmailGetService>();
+            yield return AIFunctionFactory.Create(emailGetService.GetEmail);
+
+            var emailSendService = sp.GetRequiredService<EmailSendService>();
+
+            var  sendEmailTool = AIFunctionFactory.Create(emailSendService.SendEmail);
+
+            yield return new ApprovalRequiredAIFunction(sendEmailTool);
+
         }
     }
 }

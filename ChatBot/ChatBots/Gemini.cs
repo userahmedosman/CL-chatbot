@@ -4,6 +4,7 @@ using Google.GenAI;
 using Google.GenAI.Types;
 using Microsoft.Extensions.AI;
 using System.Text;
+using static Google.Apis.Requests.BatchRequest;
 using Environment = System.Environment;
 
 internal class Gemini
@@ -26,18 +27,9 @@ internal class Gemini
                 break;
             }
             
-            var response = await chat.SendMessage(userInput);
+            await chat.SendMessage(userInput);
 
-            Console.ForegroundColor = ConsoleColor.Cyan;
-            Console.Write("Bot: ");
-            Console.ResetColor();
-            foreach (char c in response)
-            {
-                Console.Write(c);
-                await Task.Delay(34);
-            }
-
-            Console.WriteLine();
+            
         }
     }
 
@@ -74,50 +66,113 @@ internal class MessageHandler
         });
     }
              
-    public async Task<string> SendMessage(string userMessage)
+    public async Task SendMessage(string userMessage)
     {
-
-       try
+        while (true)
         {
-            _history.Add(
-           new ChatMessage
-           {
-               Role = ChatRole.User,
-               Contents = new List<AIContent>
-               {
-                   new TextContent(userMessage)
-               }
-           });
-
-            var sb = new StringBuilder();
-            
-            await foreach (var update in _client.GetStreamingResponseAsync(_history))
+            try
             {
-                foreach (var content in update.Contents)
+                _history.Add(
+               new ChatMessage
+               {
+                   Role = ChatRole.User,
+                   Contents = new List<AIContent>
+                   {
+                   new TextContent(userMessage)
+                   }
+               });
+
+                var updates = new List<ChatResponseUpdate>();
+
+                await foreach (var fragment in _client.GetStreamingResponseAsync(_history))
                 {
-                    if (content is TextContent textContent)
+                    updates.Add(fragment);
+
+                    foreach (var message in fragment.Contents)
                     {
-                        sb.Append(textContent.Text);
+                        if (message is TextContent textContent)
+                        {
+                            Console.ForegroundColor = ConsoleColor.Cyan;
+                            Console.Write("Bot: ");
+                            Console.ResetColor();
+                            foreach (char c in textContent.Text)
+                            {
+                                Console.Write(c);
+                                await Task.Delay(34);
+                            }
+
+                            
+                        }
                     }
                 }
-            }
 
-            _history.Add(
-                new ChatMessage
+                var responce = updates.ToChatResponse();
+
+                _history.AddMessages(responce);
+
+                var approvalRequest = responce.Messages
+                    .SelectMany(m => m.Contents)
+                    .OfType<ToolApprovalRequestContent>()
+                    .FirstOrDefault();
+
+                if (approvalRequest != null)
                 {
-                    Role = ChatRole.Assistant,
-                    Contents = new List<AIContent>
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    Console.WriteLine($"\nApproval Request:");
+                    Console.ResetColor();
+                    Console.Write("Do you approve this action? (yes/no): ");
+                    if (approvalRequest.ToolCall is FunctionCallContent functionCall)
                     {
-                        new TextContent(sb.ToString())
+                        Console.WriteLine($"Function: {ConvertToolName(functionCall.Name)}");
+                        if (functionCall.Arguments is not null)
+                        {
+                            foreach (var arg in functionCall.Arguments)
+                            {
+                                Console.WriteLine($"Argument: {arg.Key} = {arg.Value}");
+                            }
+                        }
                     }
-                });
 
-            return sb.ToString() ?? "Sorry, I didn't understand that.";
+                    var approvalInput = Console.ReadLine()?.Trim().ToLower();
+
+                    var approvedResponce = approvalRequest.CreateResponse(approvalInput == "yes");
+
+                    _history.Add(
+               new ChatMessage
+               {
+                   Role = ChatRole.User,
+                   Contents = new List<AIContent>
+                   {
+                   approvedResponce
+                   }
+               });
+                    Console.WriteLine();
+                    Console.WriteLine("AI: ");
+                    continue;
+
+                }
+                Console.WriteLine();
+                Console.WriteLine();
+                break;
+
+
+            }
+            catch (ClientError ex)
+            {
+                HandleGeminiError(ex);
+            }
         }
-        catch (ClientError ex)
+    }
+
+    private static string ConvertToolName(string toolName)
+    {
+        return toolName switch
         {
-            return HandleGeminiError(ex);
-        }
+            "get_weather" => "Get Weather",
+            "evaluate_weather" => "Evaluate Weather",
+            "send_email" => "Send Email",
+            _ => toolName
+        };
     }
 
     private static string HandleGeminiError(ClientError ex)

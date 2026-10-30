@@ -18,6 +18,9 @@ namespace ChatBot
             builder.Services.AddTransient<IWeatherService, WeatherAPIService>();
             builder.Services.AddTransient<EvaluateWeatherConditions>();
 
+            builder.Services.AddTransient<EmailGetService>();
+            builder.Services.AddTransient<EmailSendService>();
+
             builder.Services.AddHttpClient();
             builder.Logging.AddFilter("System.Net.Http.HttpClient", LogLevel.None);
             builder.Services.AddChatClient(sp =>
