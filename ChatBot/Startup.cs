@@ -40,7 +40,10 @@ namespace ChatBot
 
                     
                 })
-                .UseFunctionInvocation()
+                .UseFunctionInvocation(null, c =>
+                {
+                    c.IncludeDetailedErrors = true;
+                })
                 .Build(sp);
 
             });

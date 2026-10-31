@@ -52,6 +52,7 @@ internal class MessageHandler
                 new TextContent("""
         You are an assistant that makes very short and concise responses.
         You must answer in a single sentence and avoid unnecessary details.
+        If a tool fails, read the error message and try to fix the issue in your next response.
         """)
                 
                 ]
