@@ -18,8 +18,9 @@ internal class Gemini
         {
             Console.ForegroundColor = ConsoleColor.Green;
             Console.Write("You: ");
-            var userInput = Console.ReadLine();
             Console.ResetColor();
+            var userInput = Console.ReadLine();
+           
 
             if (string.IsNullOrEmpty(userInput) || userInput.ToLower() == "exit")
             {
@@ -83,25 +84,26 @@ internal class MessageHandler
                });
 
                 var updates = new List<ChatResponseUpdate>();
-
+                Console.ForegroundColor = ConsoleColor.Cyan;
+                Console.Write("BOT: ");
+                Console.ResetColor();
                 await foreach (var fragment in _client.GetStreamingResponseAsync(_history))
                 {
                     updates.Add(fragment);
 
                     foreach (var message in fragment.Contents)
                     {
+                       
                         if (message is TextContent textContent)
                         {
-                            Console.ForegroundColor = ConsoleColor.Cyan;
-                            Console.Write("Bot: ");
-                            Console.ResetColor();
+                           
                             foreach (char c in textContent.Text)
                             {
                                 Console.Write(c);
                                 await Task.Delay(34);
                             }
-
                             
+
                         }
                     }
                 }
@@ -120,7 +122,7 @@ internal class MessageHandler
                     Console.ForegroundColor = ConsoleColor.Yellow;
                     Console.WriteLine($"\nApproval Request:");
                     Console.ResetColor();
-                    Console.Write("Do you approve this action? (yes/no): ");
+                    Console.Write("Do you approve this action? ");
                     if (approvalRequest.ToolCall is FunctionCallContent functionCall)
                     {
                         Console.WriteLine($"Function: {ConvertToolName(functionCall.Name)}");
@@ -132,10 +134,12 @@ internal class MessageHandler
                             }
                         }
                     }
-
+                    Console.ForegroundColor = ConsoleColor.Blue;
+                    Console.Write("Your response here [yes / no]: ");
+                    Console.ResetColor();
                     var approvalInput = Console.ReadLine()?.Trim().ToLower();
 
-                    var approvedResponce = approvalRequest.CreateResponse(approvalInput == "yes");
+                    var approvedResponce = approvalRequest.CreateResponse(approvalInput == "yes" || approvalInput == "y");
 
                     _history.Add(
                new ChatMessage
@@ -147,7 +151,6 @@ internal class MessageHandler
                    }
                });
                     Console.WriteLine();
-                    Console.WriteLine("AI: ");
                     continue;
 
                 }
